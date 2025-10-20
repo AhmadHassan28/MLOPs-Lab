@@ -1,8 +1,8 @@
-# app.py
+# housepk_app.py
 import os
 import joblib
 import numpy as np
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify # Modification 1A: Added jsonify
 
 APP_ROOT = os.path.dirname(__file__)
 MODEL_DIR = os.path.join(APP_ROOT, "models")
@@ -36,11 +36,22 @@ for feat in feature_list:
         })
 
 app = Flask(__name__)
-app.config['TEMPLATES_AUTO_RELOAD'] = True
+# CONFLICT POINT A: Student A disabled auto-reload.
+app.config['TEMPLATES_AUTO_RELOAD'] = False
+# CONFLICT POINT A (Additional): Student B added a secret key.
+app.secret_key = 'super_secret_house_key' # Student B addition
 
 @app.route("/", methods=["GET"])
 def index():
+    # Modification 2: Student A added a print statement for debugging the index route
+    print("DEBUG: Index page requested.")
     return render_template("index.html", feature_meta=feature_meta)
+
+# New Route from Student B: A simple status/health check
+@app.route("/status", methods=["GET"])
+def status_check():
+    """Returns a simple health check status."""
+    return jsonify({"status": "ok", "model_version": "v1.0"})
 
 @app.route("/predict", methods=["POST"])
 def predict():
@@ -102,5 +113,13 @@ def api_predict():
     pred = model.predict(X)[0]
     return {"prediction": float(pred)}
 
+# New Route from Student A: A basic help/info page
+@app.route("/info", methods=["GET"])
+def info_page():
+    return render_template("info.html", model_name="House Price Model", model_type="Random Forest")
+
+
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    # CONFLICT POINT B: Both students modified this block.
+    print("--- Starting HousePK Predictor (Mode: Development) ---") # Student A modified the print
+    app.run(host='0.0.0.0', debug=False, port=5000) # Student B changed debug to False and added host
